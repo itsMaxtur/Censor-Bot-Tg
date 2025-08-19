@@ -1,4 +1,5 @@
 import os
+import re
 import telebot
 from telebot import types
 from datetime import datetime, timedelta
@@ -7,13 +8,15 @@ api_token = os.getenv("BOT_TOKEN")
 bot = telebot.TeleBot(api_token)
 
 
-with open("words.txt", "r", encoding="utf-8") as f:
-    bad_words = [line.strip().lower() for line in f if line.strip()]
 
+with open("badwords_regex_combined.txt", "r", encoding="utf-8") as f:
+    BADWORDS_PATTERN = f.read()
+
+BADWORDS_RE = re.compile(BADWORDS_PATTERN, flags=re.IGNORECASE)
 
 def contains_bad_word(text: str) -> bool:
-    text = text.lower()
-    return any(bad_word in text for bad_word in bad_words)
+
+    return BADWORDS_RE.search(text) is not None
 
 
 def restrict_user(chat_id, user_id, duration_minutes=5):
@@ -73,6 +76,7 @@ def handle_unmute(message):
             bot.reply_to(message, f"✅ Пользователь {username} разблокирован.")
     except Exception as e:
         bot.reply_to(message, f"❌ Ошибка: {e}")
+
 
 
 bot.infinity_polling()
