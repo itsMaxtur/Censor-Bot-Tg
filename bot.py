@@ -14,8 +14,15 @@ with open("badwords_regex_combined.txt", "r", encoding="utf-8") as f:
 
 badwords_re = re.compile(badwords_pattern, flags=re.IGNORECASE)
 
-def contains_bad_word(text: str) -> bool:
+def bot_can_restrict(chat_id: int) -> bool:
+    try:
+        me = bot.get_me()
+        m = bot.get_chat_member(chat_id, me.id)
+        return (m.status in ("administrator", "creator")) and bool(getattr(m, "can_restrict_members", False))
+    except:
+        return False
 
+def contains_bad_word(text: str) -> bool:
     return badwords_re.search(text) is not None
 
 def is_admin(chat_id: int, user_id: int) -> bool:
@@ -72,23 +79,7 @@ def check_message(message):
     except Exception as e:
         print("Ошибка при обработке текста:", e)
 
-@bot.message_handler(func=lambda message: True, content_types=["text"])
-def check_message(message):
-    if contains_bad_word(message.text):
-        try:
-            bot.delete_message(message.chat.id, message.message_id)
-            restrict_user(message.chat.id, message.from_user.id, 5)
 
-            text = (
-                f"⚠️ Пользователь {message.from_user.first_name} нарушил правила.\n"
-                f"ID: `{message.from_user.id}`\n\n"
-                f"Доступ к сообщениям ограничен на 5 минут."
-            )
-
-            bot.send_message(message.chat.id, text, parse_mode="Markdown")
-
-        except Exception as e:
-            print("Ошибка при удалении или ограничении:", e)
 
 
 
@@ -223,4 +214,5 @@ def handle_ban(message):
 
 
 bot.infinity_polling()
+
 
