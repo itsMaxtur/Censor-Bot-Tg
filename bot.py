@@ -53,14 +53,24 @@ def unrestrict_user(chat_id, user_id):
 
 @bot.message_handler(func=lambda message: True, content_types=["text"])
 def check_message(message):
-    if contains_bad_word(message.text):
-        try:
+    try:
+        if not message or message.text is None:
+            return
+        if contains_bad_word(message.text):
+            if not bot_can_restrict(message.chat.id):
+                bot.send_message(message.chat.id, "❌ У бота нет прав ограничивать/удалять. Дайте права администратора.")
+                return
             bot.delete_message(message.chat.id, message.message_id)
             restrict_user(message.chat.id, message.from_user.id, 5)
-            bot.send_message(message.chat.id, f"⚠️ Пользователь {message.from_user.first_name} нарушил правила. "
-                                              f"Доступ к сообщениям ограничен на 5 минут.")
-        except Exception as e:
-            print("Ошибка при удалении или ограничении:", e)
+            bot.send_message(
+                message.chat.id,
+                f"⚠️ Пользователь {message.from_user.first_name} нарушил правила.\n"
+                f"ID: {message.from_user.id}\n\n"
+                f"Доступ к сообщениям ограничен на 5 минут."
+
+            )
+    except Exception as e:
+        print("Ошибка при обработке текста:", e)
 
 @bot.message_handler(func=lambda message: True, content_types=["text"])
 def check_message(message):
@@ -213,3 +223,4 @@ def handle_ban(message):
 
 
 bot.infinity_polling()
+
